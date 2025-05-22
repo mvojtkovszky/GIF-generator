@@ -4,49 +4,24 @@
   <meta charset="UTF-8">
   <title>Create Animated GIF</title>
   <script>
-    function updateRepetitionFields() {
-      const container = document.getElementById('sequence');
-      const rows = container.querySelectorAll('div.row');
-      if (rows.length === 1) {
-        rows[0].querySelector('input[name="repetitions"]').value = 0;
-        rows[0].querySelector('input[name="repetitions"]').disabled = true;
-      } else {
-        rows.forEach(row => {
-          row.querySelector('input[name="repetitions"]').disabled = false;
-        });
-      }
-    }
-
     function addRow() {
       const container = document.getElementById('sequence');
-      const row = document.createElement('div');
-      row.className = 'row';
-      row.innerHTML = `
-        <input type="file" name="images" required>
-        <select name="effect">
-            <option value="rotate">Rotate</option>
-            <option value="still">Still</option>
-            <option value="zoom_in_bounce">Zoom In Bounce</option>
-            <option value="pulse">Pulse</option>
-            <option value="shrink_out">Shrink Out</option>
-            <option value="shrink_in">Shrink In</option>
-            <option value="move_from_left">Move From Left</option>
-        </select>
-        <input type="number" name="duration" placeholder="Duration (ms)" value="500" required>
-        <input type="number" name="repetitions" placeholder="Repetitions" value="0" min="0">
-        <button type="button" class="remove-btn" onclick="removeRow(this)">×</button><br>`;
-      container.appendChild(row);
-      updateRepetitionFields();
+      const template = document.getElementById('template-row');
+      if (template) {
+        const clone = template.cloneNode(true);
+        clone.style.display = '';
+        clone.removeAttribute('id');
+        container.appendChild(clone);
+      }
     }
 
     function removeRow(button) {
       const row = button.parentNode;
       row.parentNode.removeChild(row);
-      updateRepetitionFields();
     }
 
     window.onload = function() {
-      updateRepetitionFields();
+      addRow();
     }
   </script>
   <style>
@@ -61,29 +36,72 @@
       line-height: 1;
       vertical-align: middle;
     }
+    .row {
+      margin-bottom: 10px;
+    }
+    #dimension-settings {
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+    #generate-btn {
+      font-size: 1.2em;
+      font-weight: bold;
+      padding: 10px 20px;
+      cursor: pointer;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    #generate-btn:hover {
+      background-color: #0056b3;
+    }
+    label {
+      display: inline-block;
+      margin-right: 15px;
+    }
+    input[type="number"], select {
+      vertical-align: middle;
+      margin-left: 5px;
+    }
   </style>
 </head>
 <body>
   <h1>Create Your GIF</h1>
   <form method="post" enctype="multipart/form-data">
-    <div id="sequence">
-      <div class="row">
-        <input type="file" name="images" required>
-        <select name="effect">
-            <option value="rotate">Rotate</option>
-            <option value="still">Still</option>
-            <option value="zoom_in_bounce">Zoom In Bounce</option>
-            <option value="pulse">Pulse</option>
-            <option value="shrink_out">Shrink Out</option>
-            <option value="shrink_in">Shrink In</option>
-            <option value="move_from_left">Move From Left</option>
-        </select>
-        <input type="number" name="duration" placeholder="Duration (ms)" value="500" required>
-        <input type="number" name="repetitions" placeholder="Repetitions" value="0" min="0" disabled>
+    <div style="margin-bottom: 6px;">
+      <div class="row" style="font-weight: bold;">
+        <div style="display: inline-block; width: 240px;">Image</div>
+        <div style="display: inline-block; width: 172px;">Animation</div>
+        <div style="display: inline-block; width: 172px;">Duration</div>
+        <div style="display: inline-block; width: 172px;">Repetitions</div>
       </div>
     </div>
+    <div id="sequence">
+    </div>
     <button type="button" onclick="addRow()">Add Another</button>
-    <button type="submit">Generate GIF</button>
+    <div id="dimension-settings" class="row">
+      <label>Max Width: <input type="number" name="max_width" value="80" min="1" required></label>
+      <label>Max Height: <input type="number" name="max_height" value="80" min="1" required></label>
+    </div>
+    <button id="generate-btn" type="submit">Generate GIF</button>
   </form>
+  <div id="template-row" class="row" style="display:none;">
+    <input type="file" name="images" required style="width: 240px;">
+    <select name="effect" style="width: 160px;">
+        <option value="rotate_left">Rotate Left</option>
+        <option value="rotate_right">Rotate Right</option>
+        <option value="still">Still</option>
+        <option value="zoom_in_bounce">Zoom In Bounce</option>
+        <option value="pulse">Pulse</option>
+        <option value="shrink_out">Shrink Out</option>
+        <option value="shrink_in">Shrink In</option>
+        <option value="move_from_left">Move From Left</option>
+        <option value="move_from_right">Move From Right</option>
+    </select>
+    <input type="number" name="duration" placeholder="Duration (ms)" value="30" required style="width: 160px;">
+    <input type="number" name="repetitions" placeholder="Repetitions" value="1" min="1" style="width: 160px;">
+    <button type="button" class="remove-btn" onclick="removeRow(this)">×</button><br>
+  </div>
 </body>
 </html>

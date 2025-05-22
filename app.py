@@ -13,13 +13,34 @@ def index():
         durations = request.form.getlist("duration")
         repetitions = request.form.getlist("repetitions")
 
+        max_width = request.form.get("max_width")
+        max_height = request.form.get("max_height")
+
+        try:
+            max_width = int(max_width)
+        except (TypeError, ValueError):
+            max_width = 80
+
+        try:
+            max_height = int(max_height)
+        except (TypeError, ValueError):
+            max_height = 80
+
         sequence = []
         for file, effect, duration, repeat in zip(images, effects, durations, repetitions):
             img = Image.open(file.stream).convert("RGBA")
             duration = int(duration)
+            repeat = int(repeat)
             sequence.append((img, effect, duration, repeat))
 
-        gif_bytes = generate_gif(sequence)
+        print("Images:", images)
+        print("Effects:", effects)
+        print("Durations:", durations)
+        print("Repetitions:", repetitions)
+        print("Max Size:", max_width, max_height)
+        print("Sequence:", sequence)
+
+        gif_bytes = generate_gif(sequence, max_output_size=(max_width, max_height))
         if gif_bytes:
             return send_file(io.BytesIO(gif_bytes), mimetype="image/gif", as_attachment=True, download_name="output.gif")
         else:

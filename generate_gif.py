@@ -2,21 +2,33 @@ from PIL import Image
 import io
 
 # === Settings ===
-max_output_size = (64, 64)      # Resize input images to fit within this size
 
 # === Effect Functions ===
-def rotate_effect(image, step=10, rotation_duration=30):
+def rotate_effect_left(image, duration):
+    steps = 24
     frames = []
-    for angle in range(0, 360, step):
+    for i in range(steps):
+        angle = int(360 * i / steps)
         rotated = image.rotate(angle, resample=Image.BICUBIC)
         frames.append(rotated)
-    durations = [rotation_duration] * len(frames)
+    durations = [duration] * len(frames)
     return frames, durations
 
-def still_effect(image, duration=500):
+def rotate_effect_right(image, duration):
+    steps = 24
+    frames = []
+    for i in range(steps):
+        angle = int(360 - (360 * i / steps))
+        rotated = image.rotate(angle, resample=Image.BICUBIC)
+        frames.append(rotated)
+    durations = [duration] * len(frames)
+    return frames, durations
+
+def still_effect(image, duration):
     return [image], [duration]
 
-def bounce_zoom_effect(image, steps=10, duration=30):
+def bounce_zoom_effect(image, duration):
+    steps = 30  # 30 steps × 30ms ≈ 900ms for bounce/move
     frames = []
     durations = []
     # Scale from 1.0 to 1.5 and back to 1.0
@@ -34,7 +46,8 @@ def bounce_zoom_effect(image, steps=10, duration=30):
         durations.append(duration)
     return frames, durations
 
-def move_from_left_effect(image, steps=20, duration=30):
+def move_from_left_effect(image, duration):
+    steps = 30  # 30 steps × 30ms ≈ 900ms for bounce/move
     frames = []
     durations = []
     canvas_width, canvas_height = image.size
@@ -49,7 +62,24 @@ def move_from_left_effect(image, steps=20, duration=30):
         durations.append(duration)
     return frames, durations
 
-def pulse_effect(image, steps=5, scale_range=(1.0, 1.3), duration=40):
+def move_from_right_effect(image, duration):
+    steps = 30  # 30 steps × 30ms ≈ 900ms for bounce/move
+    frames = []
+    durations = []
+    canvas_width, canvas_height = image.size
+    start_x = canvas_width
+    end_x = -image.width
+    for i in range(steps):
+        x = int(start_x + (end_x - start_x) * (i / (steps - 1)))
+        canvas = Image.new("RGBA", image.size, (255, 255, 255, 0))
+        offset = (x, 0)
+        canvas.paste(image, offset, image)
+        frames.append(canvas)
+        durations.append(duration)
+    return frames, durations
+
+def pulse_effect(image, duration, scale_range=(1.0, 1.3)):
+    steps = 10
     frames = []
     durations = []
     min_scale, max_scale = scale_range
@@ -66,7 +96,8 @@ def pulse_effect(image, steps=5, scale_range=(1.0, 1.3), duration=40):
         durations.append(duration)
     return frames, durations
 
-def shrink_out_effect(image, steps=10, duration=40):
+def shrink_out_effect(image, duration):
+    steps = 20  # 20 steps × 30ms ≈ 600ms for shrink
     frames = []
     durations = []
     scales = [1 - (i / (steps - 1)) for i in range(steps)]
@@ -82,7 +113,8 @@ def shrink_out_effect(image, steps=10, duration=40):
         durations.append(duration)
     return frames, durations
 
-def shrink_in_effect(image, steps=10, duration=40):
+def shrink_in_effect(image, duration):
+    steps = 20  # 20 steps × 30ms ≈ 600ms for shrink
     frames = []
     durations = []
     scales = [(i / (steps - 1)) for i in range(steps)]
@@ -107,20 +139,25 @@ def center_image(img, canvas_size):
 
 # === Effects dictionary ===
 effects = {
-    "rotate": rotate_effect,
+    "rotate_left": rotate_effect_left,
+    "rotate_right": rotate_effect_right,
     "still": still_effect,
     "zoom_in_bounce": bounce_zoom_effect,
     "pulse": pulse_effect,
     "shrink_out": shrink_out_effect,
     "shrink_in": shrink_in_effect,
     "move_from_left": move_from_left_effect,
+    "move_from_right": move_from_right_effect,
 }
 
-def generate_gif(sequence):
+def generate_gif(sequence, max_output_size=(80, 80)):
     """
-    sequence: list of tuples (PIL.Image object, effect_name str, duration int or None, repeat int)
+    sequence: list of tuples (PIL.Image object, effect_name str, duration int, repeat int)
+    repeat: number of times to repeat the effect (must be at least 1)
     Returns: bytes of the generated GIF
     """
+    print("Generating GIF with sequence:", sequence)
+    print("Max output size:", max_output_size)
     # Resize images and store in dict to avoid duplicate resizing if same image instance
     images = {}
     for img, _, _, _ in sequence:
@@ -137,6 +174,7 @@ def generate_gif(sequence):
         side = int((img.width**2 + img.height**2) ** 0.5)
         if side > max_side:
             max_side = side
+    # Override canvas size with max_output_size to ensure final GIF dimensions do not exceed user-defined width and height
     canvas_size = (max_side, max_side)
 
     all_frames = []
@@ -148,43 +186,21 @@ def generate_gif(sequence):
         if not effect_func:
             # Skip unknown effect
             continue
-        if effect_name == "rotate":
-            step = 10
-            rot_dur = duration if duration is not None else 30
-            frames, durations = effect_func(img_centered, step=step, rotation_duration=rot_dur)
-        elif effect_name == "still":
-            dur = duration if duration is not None else 500
-            frames, durations = effect_func(img_centered, duration=dur)
-        elif effect_name == "zoom_in_bounce":
-            steps = 10
-            dur = duration if duration is not None else 30
-            frames, durations = effect_func(img_centered, steps=steps, duration=dur)
-        elif effect_name == "pulse":
-            steps = 5
-            dur = duration if duration is not None else 40
-            frames, durations = effect_func(img_centered, steps=steps, duration=dur)
-        elif effect_name == "shrink_out":
-            steps = 10
-            dur = duration if duration is not None else 40
-            frames, durations = effect_func(img_centered, steps=steps, duration=dur)
-        elif effect_name == "shrink_in":
-            steps = 10
-            dur = duration if duration is not None else 40
-            frames, durations = effect_func(img_centered, steps=steps, duration=dur)
-        elif effect_name == "move_from_left":
-            steps = 20
-            dur = duration if duration is not None else 30
-            frames, durations = effect_func(img_centered, steps=steps, duration=dur)
-        else:
-            frames, durations = effect_func(img_centered)
-        frames *= repeat
-        durations *= repeat
+        # repeat has to be at least 1
+        if not isinstance(repeat, int) or repeat < 1:
+            repeat = 1
+        frames, durations = effect_func(img_centered, duration=duration)
+        if repeat > 1:
+            frames *= repeat
+            durations *= repeat
         all_frames.extend(frames)
         all_durations.extend(durations)
 
     if not all_frames:
+        print("No frames generated. All_frames is empty.")
         return None
 
+    print(f"Saving GIF with {len(all_frames)} frames.")
     # Save GIF to bytes
     output_bytes = io.BytesIO()
     all_frames[0].save(
