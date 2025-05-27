@@ -41,8 +41,7 @@ http://127.0.0.1:5000
 - Click “Add Another” to add multiple image/effect rows.
 - Each row requires:
   - An image file (PNG preferred)
-  - An effect (e.g. rotate, pulse, move_from_left, etc.)
+  - An animation effect
   - A duration in milliseconds (per frame)
   - A number of repetitions (how many times to repeat the effect)
-- The first row defaults to infinite repetition if it’s the only row.
 - Click “Generate GIF” to create and download the result.
