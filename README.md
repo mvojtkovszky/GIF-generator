@@ -36,6 +36,13 @@ Then open this address in your browser:
 http://127.0.0.1:5000
 ```
 
+### SH
+Or just run the shell script to do handle all required dependencies
+
+```
+sh run.sh
+```
+
 ## Usage
 
 - Click “Add Another” to add multiple image/effect rows.
